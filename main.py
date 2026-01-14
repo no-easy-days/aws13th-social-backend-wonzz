@@ -39,8 +39,8 @@ async def delete_my_account():
 
 
 # get a specific user
-@app.get("/users/{users_id}")
-async def get_specific_user(users_id: int):
+@app.get("/users/{user_id}")
+async def get_specific_user(user_id: int):
     pass
 
 
@@ -57,30 +57,33 @@ async def get_posts(
 ):
     pass
 
+# post new post
+@app.post("/posts")
+async def create_post(post: dict):
+    pass
+
+
+# post list I wrote
+@app.get("/posts/me")
+async def get_posts_mine(page: int = 1, limit: int = 20):
+    pass
+
 
 # get a single post
 @app.get("/posts/{post_id}")
 async def get_single_post(post_id: int):
     pass
 
-# post new post
-@app.post("/posts")
-async def create_post(post: dict):
-    pass
 
 # edit post
 @app.patch("/posts/{post_id}")
 async def update_post(post_id: int):
     pass
 
+
 # delete post
 @app.delete("/posts/{post_id}")
 async def delete_post(post_id: int):
-    pass
-
-# post list I wrote
-@app.get("/posts/me")
-async def get_posts_mine(page: int = 1, limit: int = 20):
     pass
 
 
@@ -127,11 +130,11 @@ async def delete_like(post_id: int):
     pass
 
 # check like status
-@app.get("/posts/{post_id}/likes}")
+@app.get("/posts/{post_id}/likes")
 async def get_likes_status(post_id: int):
     pass
 
 # post list I liked
-@app.get("/posts")
-async def get_posts_liked(liked: bool, page: int = 1, limit: int = 20):
+@app.get("/posts/liked")
+async def get_posts_liked(page: int = 1, limit: int = 20):
     pass
