@@ -133,12 +133,15 @@ async def delete_account(current_user: dict = Depends(auth.get_current_user)):
 
     comments = data.load_data("comments.json")
 
-    user_commented_post_ids = [c["post_id"] for c in comments
-                               if c.get("user_id") == user_id and c.get("post_id") not in user_post_ids]
+    user_comment_counts = {}
+    for c in comments:
+        if c.get("user_id") == user_id and c.get("post_id") not in user_post_ids:
+            post_id = c["post_id"]
+            user_comment_counts[post_id] = user_comment_counts.get(post_id, 0) + 1
+
     for post in posts:
-        if post["id"] in user_commented_post_ids:
-            count = sum(1 for c in comments if c.get("user_id") == user_id and c.get("post_id") == post["id"])
-            post["comment_count"] = max(post.get("comment_count", 0) - count, 0)
+        if post["id"] in user_comment_counts:
+            post["comment_count"] = max(post.get("comment_count", 0) - user_comment_counts[post["id"]], 0)
 
     comments = [c for c in comments
                 if c.get("user_id") != user_id and c.get("post_id") not in user_post_ids]
