@@ -29,6 +29,7 @@ app.include_router(users_router)
 app.include_router(posts_router)
 
 app.include_router(comments.router)
+app.include_router(comments.my_comments_router)
 app.include_router(likes_router)
 
 

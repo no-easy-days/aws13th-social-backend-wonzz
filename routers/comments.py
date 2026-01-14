@@ -10,6 +10,11 @@ router = APIRouter(
     tags=["comments"]
 )
 
+my_comments_router = APIRouter(
+    prefix="/comments",
+    tags=["comments"]
+)
+
 @router.post("/", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
 async def create_comment(
         post_id: int,
@@ -139,7 +144,7 @@ async def update_comment(
         created_at=updated_comment["created_at"],
         updated_at=updated_comment["updated_at"]
     )
-@router.get("/me", response_model=list[CommentResponse], status_code=status.HTTP_200_OK)
+@my_comments_router.get("/me", response_model=list[CommentResponse], status_code=status.HTTP_200_OK)
 async def get_my_comments(current_user: dict = Depends(auth.get_current_user)):
     comments = data.load_data("comments.json")
     my_comments = [c for c in comments if c.get("user_id") == current_user["id"]]
