@@ -169,16 +169,13 @@ async def delete_post(
         )
 
     comments = data.load_data("comments.json")
-    for comment in comments:
-        if comment.get("post_id") == post_id:
-            data.delete_by_id("comments.json", comment["id"])
+    comments = [c for c in comments if c.get("post_id") != post_id]
+    data.save_data(comments, "comments.json")
 
     likes = data.load_data("likes.json")
-    for like in likes:
-        if like.get("post_id") == post_id:
-            data.delete_by_id("likes.json", like["id"])
+    likes = [l for l in likes if l.get("post_id") != post_id]
+    data.save_data(likes, "likes.json")
 
-    # 게시글 삭제
     data.delete_by_id("posts.json", post_id)
 
 

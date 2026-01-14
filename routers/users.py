@@ -128,30 +128,25 @@ async def update_profile(
 async def delete_account(current_user: dict = Depends(auth.get_current_user)):
     user_id = current_user["id"]
 
+    posts = data.load_data("posts.json")
+    user_post_ids = [p["id"] for p in posts if p.get("user_id") == user_id]
+
     comments = data.load_data("comments.json")
-    for comment in comments:
-        if comment.get("user_id") == user_id:
-            data.delete_by_id("comments.json", comment["id"])
+    comments = [c for c in comments
+                if c.get("user_id") != user_id and c.get("post_id") not in user_post_ids]
+    data.save_data(comments, "comments.json")
 
     likes = data.load_data("likes.json")
-    for like in likes:
-        if like.get("user_id") == user_id:
-            data.delete_by_id("likes.json", like["id"])
+    likes = [l for l in likes
+             if l.get("user_id") != user_id and l.get("post_id") not in user_post_ids]
+    data.save_data(likes, "likes.json")
 
-    posts = data.load_data("posts.json")
-    for post in posts:
-        if post.get("user_id") == user_id:
-            post_comments = data.load_data("comments.json")
-            for comment in post_comments:
-                if comment.get("post_id") == post["id"]:
-                    data.delete_by_id("comments.json", comment["id"])
-            post_likes = data.load_data("likes.json")
-            for like in post_likes:
-                if like.get("post_id") == post["id"]:
-                    data.delete_by_id("likes.json", like["id"])
-            data.delete_by_id("posts.json", post["id"])
+    posts = [p for p in posts if p.get("user_id") != user_id]
+    data.save_data(posts, "posts.json")
 
-    data.delete_by_id("users.json", user_id)
+    users = data.load_data("users.json")
+    users = [u for u in users if u.get("id") != user_id]
+    data.save_data(users, "users.json")
 
 
 @router.get("/{user_id}", response_model=UserPublicResponse)
