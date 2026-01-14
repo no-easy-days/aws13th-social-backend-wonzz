@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from fastapi import APIRouter,HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 
-from schemas.user import UserCreate, UserResponse
+from schemas.user import UserCreate, UserResponse, Token, UserLogin
 from utils import auth, data
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -51,4 +51,29 @@ async def signup(user_data: UserCreate):
         created_at=new_user["created_at"],
         updated_at=new_user["updated_at"]
     )
+
+
+@router.post("/login", response_model=Token)
+async def login(credentials: UserLogin):
+
+    user = data.find_by_field("users.json", "email", credentials.email)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password"
+        )
+
+    if not auth.verify_password(credentials.password, user["hashed_password"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password"
+        )
+
+    token_data = {
+        "sub": user["email"],
+        "user_id": user["id"]
+    }
+    access_token = auth.create_access_token(token_data)
+
+    return Token(access_token=access_token, token_type="bearer")
 
