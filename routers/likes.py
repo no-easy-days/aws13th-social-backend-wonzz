@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from schemas.like import LikeCreate, LikeResponse, LikeStatus
+from schemas.post import PostAllPostResponse
 from utils import auth, data
 
 router = APIRouter(prefix="/likes", tags=["likes"])
@@ -94,3 +96,61 @@ async def delete_like(
         is_liked=False,
         total_likes=new_like_count
     )
+
+
+@router.get("/status/{post_id}", response_model=LikeStatus, status_code=status.HTTP_200_OK)
+async def get_like_status(
+        post_id: int,
+        current_user: dict = Depends(auth.get_current_user)
+):
+    post = data.find_by_id("posts.json", post_id)
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="게시글을 찾을 수 없음"
+        )
+
+    likes = data.load_data("likes.json")
+    existing_like = next(
+        (like for like in likes
+         if like["post_id"] == post_id and like["user_id"] == current_user["id"]),
+        None
+    )
+
+    return LikeStatus(
+        is_liked=existing_like is not None,
+        total_likes=post.get("like_count", 0)
+    )
+
+
+@router.get("/me", response_model=List[PostAllPostResponse], status_code=status.HTTP_200_OK)
+async def get_my_liked_posts(
+        current_user: dict = Depends(auth.get_current_user)
+):
+    likes = data.load_data("likes.json")
+    my_likes = [like for like in likes if like["user_id"] == current_user["id"]]
+
+    my_likes.sort(key=lambda x: x.get("id", 0), reverse=True)
+
+    posts = data.load_data("posts.json")
+    liked_post_ids = [like["post_id"] for like in my_likes]
+
+    liked_posts = []
+    for post_id in liked_post_ids:
+        post = next((p for p in posts if p["id"] == post_id), None)
+        if post:
+            liked_posts.append(
+                PostAllPostResponse(
+                    id=post["id"],
+                    user_id=post["user_id"],
+                    author_nickname=post.get("author_nickname", "탈퇴한 사용자"),
+                    title=post["title"],
+                    view_count=post.get("view_count", 0),
+                    like_count=post.get("like_count", 0),
+                    comment_count=post.get("comment_count", 0),
+                    created_at=post["created_at"],
+                    updated_at=post["updated_at"]
+                )
+            )
+
+    return liked_posts
