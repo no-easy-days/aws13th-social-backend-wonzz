@@ -2,12 +2,14 @@ import os
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import HTTPException, status
-from fastapi.security import HTTPBearer
+from fastapi import HTTPException, status,Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from schemas.user import TokenData
+from utils.data import find_by_id
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -60,3 +62,23 @@ def verify_token(token: str) -> TokenData:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> dict:
+
+    token = credentials.credentials
+
+    token_data = verify_token(token)
+
+    user = find_by_id("users.json", token_data.user_id)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_response = {k: v for k, v in user.items() if k != "hashed_password"}
+
+    return user_response
