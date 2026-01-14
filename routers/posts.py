@@ -75,3 +75,30 @@ async def get_all_posts():
 
     return post_responses
 
+@router.get("/{post_id}", response_model=PostResponse, status_code=status.HTTP_200_OK)
+async def get_detail_post(post_id: int):
+
+    detailed_post = data.find_by_id("posts.json", post_id)
+
+    if not detailed_post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="게시글을 찾을 수 없음"
+        )
+
+    new_view_count = detailed_post.get("view_count", 0) + 1
+    data.update_by_id("posts.json", post_id, {"view_count": new_view_count})
+    detailed_post["view_count"] = new_view_count
+
+    return PostResponse(
+        id=detailed_post["id"],
+        user_id=detailed_post["user_id"],
+        author_nickname=detailed_post.get("author_nickname", "탈퇴한 사용자"),
+        title=detailed_post["title"],
+        content=detailed_post["content"],
+        view_count=detailed_post["view_count"],
+        like_count=detailed_post.get("like_count", 0),
+        comment_count=detailed_post.get("comment_count", 0),
+        created_at=detailed_post["created_at"],
+        updated_at=detailed_post["updated_at"]
+    )
